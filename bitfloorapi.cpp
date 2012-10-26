@@ -18,7 +18,7 @@ void BitFloorApi::getBalances()
 
     QNetworkRequest req(QUrl("https://api.bitfloor.com/accounts"));
 
-    QByteArray secret = bfsecretkey;
+    QByteArray secret = Secret::bfsecretkey;
     secret = QByteArray::fromBase64(secret);
 
     lastCall = std::max(lastCall+1, QDateTime::currentMSecsSinceEpoch());
@@ -26,8 +26,8 @@ void BitFloorApi::getBalances()
     QByteArray body = "nonce=" + QByteArray::number(lastCall);
     QByteArray sign = hmac(secret, body).toBase64();
 
-    req.setRawHeader("bitfloor-key", bfapikey);
-    req.setRawHeader("bitfloor-passphrase", bfpassphrase);
+    req.setRawHeader("bitfloor-key", Secret::bfapikey);
+    req.setRawHeader("bitfloor-passphrase", Secret::bfpassphrase);
     req.setRawHeader("bitfloor-version", "1");
     req.setRawHeader("bitfloor-sign", sign);
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");

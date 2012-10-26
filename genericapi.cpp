@@ -25,6 +25,7 @@ void GenericApi::replyReceived(QNetworkReply *r)
 {
     if (r->error() == QNetworkReply::NoError) {
         QByteArray data = r->readAll();
+        //qDebug() << data;
 
         QScriptValue v = engine.evaluate("(" + QString(data) + ")");
 
