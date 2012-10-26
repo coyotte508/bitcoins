@@ -1,29 +1,10 @@
 #include <QtNetwork/QNetworkReply>
-#include <QDateTime>
 #include <QScriptValueIterator>
-#include <QDebug>
-#include <QHttpMultiPart>
+#include <QDateTime>
 
 #include "hmac.h"
 #include "secrets.h" /* Contains user's api keys & passphrase */
 #include "bitfloorapi.h"
-
-BitFloorApi::BitFloorApi()
-{
-    connect(&nam, SIGNAL(finished(QNetworkReply*)), SLOT(replyReceived(QNetworkReply*)));
-}
-
-void BitFloorApi::start()
-{
-    timer.start(30000, this);
-    getBalances();
-    refresh();
-}
-
-void BitFloorApi::timerEvent(QTimerEvent *)
-{
-    refresh();
-}
 
 void BitFloorApi::refresh()
 {
@@ -54,39 +35,31 @@ void BitFloorApi::getBalances()
     nam.post(req, body)->setProperty("type", "balance");
 }
 
-void BitFloorApi::replyReceived(QNetworkReply *r)
+void BitFloorApi::analyzeTicker(const QScriptValue &v)
 {
-    if (r->error() == QNetworkReply::NoError) {
-        QByteArray data = r->readAll();
+    double bid = v.property("bid").property(0).toNumber();
+    double ask = v.property("ask").property(0).toNumber();
 
-        QScriptValue v = engine.evaluate("(" + QString(data) + ")");
+    emit currentPrices(ask, bid);
+}
 
-        if (r->property("type") == "ticker") {
-            double bid = v.property("bid").property(0).toNumber();
-            double ask = v.property("ask").property(0).toNumber();
+void BitFloorApi::analyzeBalance(const QScriptValue &v)
+{
+    double btc(0), usd(0);
 
-            emit currentPrices(ask, bid);
-        } else if (r->property("type") == "balance") {
-            double btc(0), usd(0);
+    QScriptValueIterator it(v);
 
-            QScriptValueIterator it(v);
+    while (it.hasNext()) {
+        it.next();
 
-            while (it.hasNext()) {
-                it.next();
+        QString type = it.value().property("currency").toString();
 
-                QString type = it.value().property("currency").toString();
-
-                if (type == "BTC") {
-                    btc = it.value().property("amount").toNumber();
-                } else if (type == "USD") {
-                    usd = it.value().property("amount").toNumber();
-                }
-            }
-
-            emit currentBalances(btc, usd);
+        if (type == "BTC") {
+            btc = it.value().property("amount").toNumber();
+        } else if (type == "USD") {
+            usd = it.value().property("amount").toNumber();
         }
-    } else {
-        qDebug() << r->errorString();
-        qDebug() << r->readAll();
     }
+
+    emit currentBalances(btc, usd);
 }
