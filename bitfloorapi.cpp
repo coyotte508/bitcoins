@@ -5,7 +5,7 @@
 #include <QHttpMultiPart>
 
 #include "hmac.h"
-#include "secrets.h"
+#include "secrets.h" /* Contains user's api keys & passphrase */
 #include "bitfloorapi.h"
 
 BitFloorApi::BitFloorApi()
